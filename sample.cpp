@@ -83,181 +83,181 @@ bool search_place(int a[15][15], int x, int y)
     return false;
 }
 
-int score_cal(int a[15][15], int color, bool flag)
-{
-    int score = 0;
-    int count = 0;
-
-    for (int i = 0;i < 15;++i)
-        for (int j = 0;j < 15;++j)
-        {
-            if (a[i][j] == color)
-            {
-                for (int m = i - 1;m <= i + 1;++m)
-                    for (int n = j - 1;n <= j + 1;++n)
-                    {
-                        if (!outofboard(m, n))
-                        {
-                            if (a[m][n] != -1) count++;
-                        }
-                    }
-                if (count == 1) score += 10 * positionweight[i][j];
-            }
-        }
-    count = 0;
-
-    for (int i = 0;i < 15;++i)
-        for (int j = 0;j < 15;++j)
-        {
-            if (a[i][j] == color) count++;
-            else if (count > 1)
-            {
-                int weight = 0;
-                for (int m = j - count;m <= j - 1;++m)
-                {
-                    weight += positionweight[i][m];
-                }
-                weight /= count;
-
-                if (a[i][j] == -1 && a[i][j - count - 1] == -1)
-                {
-                    if (count == 5) score += 1000000;
-                    else score += pow(10, count) * weight;
-                }
-                else if (a[i][j] != -1 && a[i][j - count - 1] != -1)
-                {
-                    if (count == 5) score += 1000000;
-                }
-                else
-                {
-                    if (count == 5) score += 1000000;
-                    else score += pow(10, count - 1) * weight;
-                }
-                count = 0;
-            }
-            else count = 0;
-        }
-    count = 0;
-
-    for (int j = 0;j < 15;++j)
-        for (int i = 0;i < 15;++i)
-        {
-            if (a[i][j] == color) count++;
-            else if (count > 1)
-            {
-                int weight = 0;
-                for (int m = i - count;m <= i - 1;++m)
-                {
-                    weight += positionweight[m][j];
-                }
-                weight /= count;
-                if (a[i - count - 1][j] == -1 && a[i][j] == -1)
-                {
-                    if (count == 5) score += 1000000;
-                    else score += pow(10, count) * weight;
-                }
-                else if (a[i][j] != -1 && a[i - count - 1][j] != -1)
-                {
-                    if (count == 5) score += 1000000;
-                }
-                else
-                {
-                    if (count == 5) score += 1000000;
-                    else score += pow(10, count - 1) * weight;
-                }
-                count = 0;
-            }
-            else count = 0;
-        }
-    count = 0;
-
-    for (int i = -14;i <= 14;++i)
-    {
-        int j = i;
-        int k = 14;
-        for (;j < 15;++j, --k)
-        {
-            if (!outofboard(j, k))
-            {
-                if (a[j][k] == color) count++;
-                else if (count > 1)
-                {
-                    int weight = 0;
-                    for (int m = 1;m <= count;++m)
-                    {
-                        weight += positionweight[j - m][k + m];
-                    }
-                    weight /= count;
-
-                    if (a[j - count - 1][k + count + 1] == -1 && a[j][k] == -1)
-                    {
-                        if (count == 5) score += 1000000;
-                        else score += pow(10, count) * weight;
-                    }
-                    else if (a[j - count - 1][k + count + 1] != -1 && a[j][k] != -1)
-                    {
-                        if (count == 5) score += 1000000;
-                    }
-                    else
-                    {
-                        if (count == 5) score += 1000000;
-                        else score += pow(10, count - 1) * weight;
-                    }
-                    count = 0;
-                }
-                else count = 0;
-            }
-        }
-    }
-    count = 0;
-
-    for (int i = -14;i <= 14;++i)
-    {
-        int j = i;
-        int k = 0;
-        for (;j < 15;++j, ++k)
-        {
-            if (!outofboard(j, k))
-            {
-                if (a[j][k] == color) count++;
-                else if (count > 1)
-                {
-                    int weight = 0;
-                    for (int m = 1;m <= count;++m)
-                    {
-                        weight += positionweight[j - m][k - m];
-                    }
-                    weight /= count;
-
-                    if (a[j - count - 1][k - count - 1] == -1 && a[j][k] == -1)
-                    {
-                        if (count == 5) score += 1000000;
-                        else score += pow(10, count) * weight;
-                    }
-                    else if (a[j - count - 1][k - count - 1] != -1 && a[j][k] != -1)
-                    {
-                        if (count == 5) score += 1000000;
-                    }
-                    else
-                    {
-                        if (count == 5) score += 1000000;
-                        else score += pow(10, count - 1) * weight;
-                    }
-                    count = 0;
-                }
-                else count = 0;
-            }
-        }
-    }
-
-    if (flag)
-    {
-        return score - score_cal(a, 1 - color, false);
-    }
-
-    return score;
-
-}
+//int score_cal(int a[15][15], int color, bool flag)
+//{
+//    int score = 0;
+//    int count = 0;
+//
+//    for (int i = 0;i < 15;++i)
+//        for (int j = 0;j < 15;++j)
+//        {
+//            if (a[i][j] == color)
+//            {
+//                for (int m = i - 1;m <= i + 1;++m)
+//                    for (int n = j - 1;n <= j + 1;++n)
+//                    {
+//                        if (!outofboard(m, n))
+//                        {
+//                            if (a[m][n] != -1) count++;
+//                        }
+//                    }
+//                if (count == 1) score += 10 * positionweight[i][j];
+//            }
+//        }
+//    count = 0;
+//
+//    for (int i = 0;i < 15;++i)
+//        for (int j = 0;j < 15;++j)
+//        {
+//            if (a[i][j] == color) count++;
+//            else if (count > 1)
+//            {
+//                int weight = 0;
+//                for (int m = j - count;m <= j - 1;++m)
+//                {
+//                    weight += positionweight[i][m];
+//                }
+//                weight /= count;
+//
+//                if (a[i][j] == -1 && a[i][j - count - 1] == -1)
+//                {
+//                    if (count == 5) score += 1000000;
+//                    else score += pow(10, count) * weight;
+//                }
+//                else if (a[i][j] != -1 && a[i][j - count - 1] != -1)
+//                {
+//                    if (count == 5) score += 1000000;
+//                }
+//                else
+//                {
+//                    if (count == 5) score += 1000000;
+//                    else score += pow(10, count - 1) * weight;
+//                }
+//                count = 0;
+//            }
+//            else count = 0;
+//        }
+//    count = 0;
+//
+//    for (int j = 0;j < 15;++j)
+//        for (int i = 0;i < 15;++i)
+//        {
+//            if (a[i][j] == color) count++;
+//            else if (count > 1)
+//            {
+//                int weight = 0;
+//                for (int m = i - count;m <= i - 1;++m)
+//                {
+//                    weight += positionweight[m][j];
+//                }
+//                weight /= count;
+//                if (a[i - count - 1][j] == -1 && a[i][j] == -1)
+//                {
+//                    if (count == 5) score += 1000000;
+//                    else score += pow(10, count) * weight;
+//                }
+//                else if (a[i][j] != -1 && a[i - count - 1][j] != -1)
+//                {
+//                    if (count == 5) score += 1000000;
+//                }
+//                else
+//                {
+//                    if (count == 5) score += 1000000;
+//                    else score += pow(10, count - 1) * weight;
+//                }
+//                count = 0;
+//            }
+//            else count = 0;
+//        }
+//    count = 0;
+//
+//    for (int i = -14;i <= 14;++i)
+//    {
+//        int j = i;
+//        int k = 14;
+//        for (;j < 15;++j, --k)
+//        {
+//            if (!outofboard(j, k))
+//            {
+//                if (a[j][k] == color) count++;
+//                else if (count > 1)
+//                {
+//                    int weight = 0;
+//                    for (int m = 1;m <= count;++m)
+//                    {
+//                        weight += positionweight[j - m][k + m];
+//                    }
+//                    weight /= count;
+//
+//                    if (a[j - count - 1][k + count + 1] == -1 && a[j][k] == -1)
+//                    {
+//                        if (count == 5) score += 1000000;
+//                        else score += pow(10, count) * weight;
+//                    }
+//                    else if (a[j - count - 1][k + count + 1] != -1 && a[j][k] != -1)
+//                    {
+//                        if (count == 5) score += 1000000;
+//                    }
+//                    else
+//                    {
+//                        if (count == 5) score += 1000000;
+//                        else score += pow(10, count - 1) * weight;
+//                    }
+//                    count = 0;
+//                }
+//                else count = 0;
+//            }
+//        }
+//    }
+//    count = 0;
+//
+//    for (int i = -14;i <= 14;++i)
+//    {
+//        int j = i;
+//        int k = 0;
+//        for (;j < 15;++j, ++k)
+//        {
+//            if (!outofboard(j, k))
+//            {
+//                if (a[j][k] == color) count++;
+//                else if (count > 1)
+//                {
+//                    int weight = 0;
+//                    for (int m = 1;m <= count;++m)
+//                    {
+//                        weight += positionweight[j - m][k - m];
+//                    }
+//                    weight /= count;
+//
+//                    if (a[j - count - 1][k - count - 1] == -1 && a[j][k] == -1)
+//                    {
+//                        if (count == 5) score += 1000000;
+//                        else score += pow(10, count) * weight;
+//                    }
+//                    else if (a[j - count - 1][k - count - 1] != -1 && a[j][k] != -1)
+//                    {
+//                        if (count == 5) score += 1000000;
+//                    }
+//                    else
+//                    {
+//                        if (count == 5) score += 1000000;
+//                        else score += pow(10, count - 1) * weight;
+//                    }
+//                    count = 0;
+//                }
+//                else count = 0;
+//            }
+//        }
+//    }
+//
+//    if (flag)
+//    {
+//        return score - score_cal(a, 1 - color, false);
+//    }
+//
+//    return score;
+//
+//}
 
 
 int score_update(int x, int y, int color, int score[2])
@@ -366,6 +366,7 @@ int min_max(int deep, int color, int ALPHA, int BETA,int _range[4],int _score[2]
                 memcpy(range, _range, 4 * sizeof(int));
                 memcpy(score, _score, 2 * sizeof(int));
                 board[i][j] = color;
+                range_update(range, i, j);
 
                 if (deep == 0) minmax = score_update(i, j, color, score);
                 else 
@@ -405,6 +406,7 @@ int min_max(int deep, int color, int ALPHA, int BETA,int _range[4],int _score[2]
                 memcpy(range, _range, 4 * sizeof(int));
                 memcpy(score, _score, 2 * sizeof(int));
                 board[i][j] = color;
+                range_update(range, i, j);
 
                 score_update(i, j, color, score);
                 minmax = min_max(deep - 1, ~color, t.alpha, t.beta, range, score);
@@ -468,7 +470,7 @@ std::pair<int, int> action(std::pair<int, int> loc)
 	/* TODO: Replace this by your code */
 	/* This is now a random strategy */
     turn++;
-    if (loc.first == -1 && loc.second == -1 && swap_or_not())
+    if (loc.first == -1 && loc.second == -1)
     {
         if (turn == 1)
         {
@@ -535,7 +537,7 @@ std::pair<int, int> action(std::pair<int, int> loc)
         }
     }
 
-    if (turn == 2 && ai_side == 1) 
+    if (turn == 2 && ai_side == 1 && swap_or_not())
     {
         for (int i = 0; i < 15; ++i)
             for (int j = 0; j < 15; ++j)
