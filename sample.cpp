@@ -42,7 +42,7 @@ int x_place, y_place;
 int score[2] = { 0,0 };
 int range[4] = { 14,0,14,0 };
 
-void range_update(int range[4], int x, int y)
+void range_update(int* range, int x, int y)
 {
     if (x - 2 >= 0)
     {
@@ -74,6 +74,7 @@ bool outofboard(int x, int y)
 bool search_place(int a[15][15], int x, int y)
 {
     if (a[x][y] != -1) return false;
+    if (outofboard(x, y)) return false;
     for (int i = x - 2;i <= x + 2;++i)
         for (int j = y - 2;j <= j + 2;++j)
         {
@@ -260,14 +261,14 @@ bool search_place(int a[15][15], int x, int y)
 //}
 
 
-int score_update(int x, int y, int color, int score[2])
+int score_update(int x, int y, int color, int* score)
 {
     bool left_blocked = false, right_blocked = false;
     int num1 = 0, num2 = 0, num = 0;
     int weight1 = 0, weight2 = 0, weight = 0;
     for (int i = 0;i < 4;++i)
     {
-        int det_x = dir[i][1], det_y = dir[i][2];
+        int det_x = dir[i][0], det_y = dir[i][1];
         while (!outofboard(x - det_x * (1 + num1), y - det_y * (1 + num1)))
         {
             if (board[x - det_x * (1 + num1)][y - det_y * (1 + num1)] != color) break;
@@ -275,7 +276,7 @@ int score_update(int x, int y, int color, int score[2])
             num1++;
         }
         weight += weight1;
-        weight1 /= num1;
+        if(num1) weight1 /= num1;
         while (!outofboard(x + det_x * (1 + num2), y + det_y * (1 + num2)))
         {
             if (board[x + det_x * (1 + num2)][y + det_y * (1 + num2)] != color) break;
@@ -283,7 +284,7 @@ int score_update(int x, int y, int color, int score[2])
             num2++;
         }
         weight += weight2;
-        weight2 /= num2;
+        if (num2) weight2 /= num2;
 
         weight += positionweight[x][y];
         num = num1 + num2 + 1;
@@ -307,7 +308,7 @@ int score_update(int x, int y, int color, int score[2])
                 weight1 += positionweight[x - det_x * (1 + num1)][y - det_y * (1 + num1)];
                 num1++;
             }
-            weight1 /= num1;
+            if(num1) weight1 /= num1;
 
             if (outofboard(x - det_x * (1 + num1), y - det_y * (1 + num1)) || board[x - det_x * (1 + num1)][y - det_y * (1 + num1)] != ~color) left_blocked = true;
             else left_blocked = false;
@@ -324,7 +325,7 @@ int score_update(int x, int y, int color, int score[2])
                 weight2 += positionweight[x + det_x * (1 + num2)][y + det_y * (1 + num2)];
                 num2++;
             }
-            weight2 /= num2;
+            if(num2) weight2 /= num2;
 
             if (outofboard(x + det_x * (1 + num2), y + det_y * (1 + num2)) || board[x + det_x * (1 + num2)][y + det_y * (1 + num2)] != color) right_blocked = true;
             else right_blocked = false;
@@ -342,7 +343,7 @@ struct tree
     int w;
 };
 
-int min_max(int deep, int color, int ALPHA, int BETA,int _range[4],int _score[2])
+int min_max(int deep, int color, int ALPHA, int BETA, int _range[4], int _score[2])
 {
     tree t;
     t.w = INT_MIN;
@@ -353,53 +354,8 @@ int min_max(int deep, int color, int ALPHA, int BETA,int _range[4],int _score[2]
     int range[4];
     int score[2];
 
-    
-
 
     if (deep % 2 == 0)
-    {
-        for (int i = _range[0];i <= _range[1];++i)
-        {
-            int breakflag = false;
-            for (int j = _range[2];j <= _range[3];++j)
-            {
-                if (search_place(board, i, j))
-                {
-                    memcpy(range, _range, 4 * sizeof(int));
-                    memcpy(score, _score, 2 * sizeof(int));
-                    board[i][j] = color;
-                    range_update(range, i, j);
-
-                    if (deep == 0) minmax = score_update(i, j, color, score);
-                    else
-                    {
-                        score_update(i, j, color, score);
-                        minmax = min_max(deep - 1, ~color, t.alpha, t.beta, range, score);
-                    }
-
-                    board[i][j] = -1;
-                    if (t.alpha < minmax)
-                    {
-                        t.alpha = minmax;
-                        if (deep == DEPTH)
-                        {
-                            x_place = i;
-                            y_place = j;
-                        }
-                    }
-                    if (t.beta <= t.alpha)
-                    {
-                        breakflag = true;
-                        break;
-                    }
-                }
-            }
-            if (breakflag) break;
-        }
-        return t.alpha;
-    }
-
-    if (deep % 2 != 0)
     {
         for (int i = _range[0];i <= _range[1];++i)
         {
@@ -418,23 +374,68 @@ int min_max(int deep, int color, int ALPHA, int BETA,int _range[4],int _score[2]
 
                     board[i][j] = -1;
 
+                    if (t.alpha < minmax)
+                    {
+                        t.alpha = minmax;
+                        if (deep == DEPTH)
+                        {
+                            x_place = i;
+                            y_place = j;
+                        }
+                    }
+                    if (t.beta <= t.alpha)
+                    {
+                        breakflag = true;
+                        break;
+                    }
+                }
+            }
+            if (breakflag) break;
+        }
+        return -t.alpha;
+    }
+
+    if (deep % 2 != 0)
+    {
+        for (int i = _range[0];i <= _range[1];++i)
+        {
+            int breakflag = false;
+            for (int j = _range[2];j <= _range[3];++j)
+            {
+                if (search_place(board, i, j))
+                {
+                    memcpy(range, _range, 4 * sizeof(int));
+                    memcpy(score, _score, 2 * sizeof(int));
+                    board[i][j] = color;
+                    range_update(range, i, j);
+
+                    if (deep == 1) minmax = score_update(i, j, color, score);
+                    else
+                    {
+                        score_update(i, j, color, score);
+                        minmax = min_max(deep - 1, ~color, t.alpha, t.beta, range, score);
+                    }
+
+                    board[i][j] = -1;
+
                     if (t.beta > minmax) t.beta = minmax;
                     if (t.beta <= t.alpha)
                     {
                         breakflag = true;
                         break;
                     }
-                }           
+                }
             }
             if (breakflag) break;
         }
-        return t.beta;
+        return -t.beta;
     }
 }
 
 //init function is called once at the beginning
 void init() 
 {
+    score[0] = score[1] = 0;
 	memset(board, -1, sizeof(board));
 }
 
@@ -456,14 +457,6 @@ void init()
 //    }
 //}
 
-
-std::pair<int, int> choose_next()
-{
-    min_max(DEPTH, ai_side, INT_MIN, INT_MAX, range, score);
-    board[x_place][y_place] = ai_side;
-    range_update(range, x_place, y_place);
-    return std::make_pair(x_place, y_place);
-}
 
 bool swap_or_not()
 {
@@ -494,11 +487,17 @@ std::pair<int, int> action(std::pair<int, int> loc)
             int tmp = score[0];
             score[0] = score[1];
             score[1] = tmp;
-            choose_next();
+
+            min_max(DEPTH, ai_side, INT_MIN, INT_MAX, range, score);
+            board[x_place][y_place] = ai_side;
+            score_update(x_place, y_place, ai_side, score);
+            range_update(range, x_place, y_place);
+            return std::make_pair(x_place, y_place);
         }
     }
 
-    board[loc.first][loc.second] = 1 - ai_side;
+    board[loc.first][loc.second] = ~ai_side;
+    score_update(loc.first, loc.second, ~ai_side, score);
     range_update(range, loc.first, loc.second);
 
     if (turn == 1)
@@ -556,7 +555,11 @@ std::pair<int, int> action(std::pair<int, int> loc)
         return std::make_pair(-1, -1);
     }
     
-    return choose_next();
+    min_max(DEPTH, ai_side, INT_MIN, INT_MAX, range, score);
+    board[x_place][y_place] = ai_side;
+    score_update(x_place, y_place, ai_side, score);
+    range_update(range, x_place, y_place);
+    return std::make_pair(x_place, y_place);
 }
 
 
