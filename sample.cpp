@@ -30,12 +30,14 @@ int positionweight[15][15] =
 { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }
 };
 
-ll judge_score(int n)
+
+ll judge_score(int n, bool enemy)
 {
+    int t = enemy ? 3 : 1;
     if (n == 0) return 0;
-    if (n == 1 || n == 2) return pow(10, n);
-    if (n == 3) return pow(100, n);
-    if (n == 4) return pow(1000, n);
+    if (n == 1 || n == 2) return pow(10, n) * t;
+    if (n == 3) return pow(40, n) * t;
+    if (n == 4) return pow(80, n) * t;
     return 1e16;
 }
 
@@ -48,7 +50,7 @@ int dir[4][2] =
 { 1, -1 },
 };
 
-const int DEPTH = 6;
+const int DEPTH = 4;
 int x_place = 0, y_place = 0;
 ll score[2] = { 0,0 };
 int range[4] = { 14,0,14,0 };
@@ -275,7 +277,6 @@ bool search_place(int x, int y)
 //
 //}
 
-
 int score_update(int x, int y, int color, ll* score)
 {
     bool left_blocked = false, right_blocked = false;
@@ -290,29 +291,29 @@ int score_update(int x, int y, int color, ll* score)
             //weight1 += positionweight[x - det_x * (1 + num1)][y - det_y * (1 + num1)];
             num1++;
         }
-       // weight += weight1;
-       // if(num1) weight1 /= num1;
+        // weight += weight1;
+        // if(num1) weight1 /= num1;
         while (!outofboard(x + det_x * (1 + num2), y + det_y * (1 + num2)))
         {
             if (board[x + det_x * (1 + num2)][y + det_y * (1 + num2)] != color) break;
-           // weight2 += positionweight[x + det_x * (1 + num2)][y + det_y * (1 + num2)];
+            // weight2 += positionweight[x + det_x * (1 + num2)][y + det_y * (1 + num2)];
             num2++;
         }
-      //  weight += weight2;
-       // if (num2) weight2 /= num2;
+        //  weight += weight2;
+         // if (num2) weight2 /= num2;
 
-      //  weight += positionweight[x][y];
+        //  weight += positionweight[x][y];
         num = num1 + num2 + 1;
-      //  weight /= num;
+        //  weight /= num;
 
         if (outofboard(x - det_x * (1 + num1), y - det_y * (1 + num1)) || board[x - det_x * (1 + num1)][y - det_y * (1 + num1)] != -1) left_blocked = true;
         if (outofboard(x + det_x * (1 + num2), y + det_y * (1 + num2)) || board[x + det_x * (1 + num2)][y + det_y * (1 + num2)] != -1) right_blocked = true;
 
-        score[color] -= judge_score(num1 - left_blocked);//* weight1;
-        score[color] -= judge_score(num2 - right_blocked);// *weight2;
+        score[color] -= judge_score(num1 - left_blocked, 0);//* weight1;
+        score[color] -= judge_score(num2 - right_blocked, 0);// *weight2;
 
-        if (num == 5) score[color] += judge_score(5);
-        else if (left_blocked + right_blocked < 2) score[color] += judge_score(num + 1 - left_blocked - right_blocked);// *weight;
+        if (num == 5) score[color] += judge_score(5, 0);
+        else if (left_blocked + right_blocked < 2) score[color] += judge_score(num + 1 - left_blocked - right_blocked, 0);// *weight;
 
         //weight1 = weight2 = 0;
         if (!num1 && left_blocked)
@@ -320,16 +321,16 @@ int score_update(int x, int y, int color, ll* score)
             while (!outofboard(x - det_x * (1 + num1), y - det_y * (1 + num1)))
             {
                 if (board[x - det_x * (1 + num1)][y - det_y * (1 + num1)] != 1 - color) break;
-               // weight1 += positionweight[x - det_x * (1 + num1)][y - det_y * (1 + num1)];
+                // weight1 += positionweight[x - det_x * (1 + num1)][y - det_y * (1 + num1)];
                 num1++;
             }
-           // if(num1) weight1 /= num1;
+            // if(num1) weight1 /= num1;
 
             if (outofboard(x - det_x * (1 + num1), y - det_y * (1 + num1)) || board[x - det_x * (1 + num1)][y - det_y * (1 + num1)] != -1) left_blocked = true;
             else left_blocked = false;
 
-            score[1 - color] -= judge_score(num1 - left_blocked);// *weight1;
-            if (!left_blocked) score[1 - color] += judge_score(num1 - 1);// *weight1;
+            score[1 - color] -= judge_score(num1 - left_blocked, 1);// *weight1;
+            if (!left_blocked) score[1 - color] += judge_score(num1 - 1, 1);// *weight1;
         }
 
         if (!num2 && right_blocked)
@@ -337,16 +338,16 @@ int score_update(int x, int y, int color, ll* score)
             while (!outofboard(x + det_x * (1 + num2), y + det_y * (1 + num2)))
             {
                 if (board[x + det_x * (1 + num2)][y + det_y * (1 + num2)] != color) break;
-             //   weight2 += positionweight[x + det_x * (1 + num2)][y + det_y * (1 + num2)];
+                //   weight2 += positionweight[x + det_x * (1 + num2)][y + det_y * (1 + num2)];
                 num2++;
             }
-           // if(num2) weight2 /= num2;
+            // if(num2) weight2 /= num2;
 
             if (outofboard(x + det_x * (1 + num2), y + det_y * (1 + num2)) || board[x + det_x * (1 + num2)][y + det_y * (1 + num2)] != -1) right_blocked = true;
             else right_blocked = false;
 
-            score[1 - color] -= judge_score(num2 - right_blocked);// *weight2;
-            if (!right_blocked) score[1 - color] += judge_score(num2 - 1);// *weight2;
+            score[1 - color] -= judge_score(num2 - right_blocked, 1);// *weight2;
+            if (!right_blocked) score[1 - color] += judge_score(num2 - 1, 1);// *weight2;
         }
     }
 
@@ -370,8 +371,6 @@ ll min_max(int deep, int color, int ALPHA, int BETA, int _range[4], ll _score[2]
     int range[4];
     ll score[2];
 
-
-
     if (deep % 2 == 0 && deep != 0)
     {
         for (int i = _range[0];i <= _range[1];++i)
@@ -379,7 +378,7 @@ ll min_max(int deep, int color, int ALPHA, int BETA, int _range[4], ll _score[2]
             bool breakflag = false;
             for (int j = _range[2];j <= _range[3];++j)
             {
-                if (board[i][j] == -1)
+                if (search_place(i, j))
                 {
                     memcpy(range, _range, 4 * sizeof(int));
                     memcpy(score, _score, 2 * sizeof(ll));
@@ -412,7 +411,7 @@ ll min_max(int deep, int color, int ALPHA, int BETA, int _range[4], ll _score[2]
             bool breakflag = false;
             for (int j = _range[2];j <= _range[3];++j)
             {
-                if (board[i][j] == -1)
+                if (search_place(i, j))
                 {
                     memcpy(range, _range, 4 * sizeof(int));
                     memcpy(score, _score, 2 * sizeof(ll));
@@ -441,7 +440,6 @@ ll min_max(int deep, int color, int ALPHA, int BETA, int _range[4], ll _score[2]
     x_place = t.x;
     y_place = t.y;
     return score[ai_side] - score[1 - ai_side];
-
 }
 
 //init function is called once at the beginning
@@ -468,7 +466,6 @@ void init()
 //        }
 //    }
 //}
-
 
 bool swap_or_not()
 {
@@ -573,3 +570,6 @@ std::pair<int, int> action(std::pair<int, int> loc)
     range_update(range, x_place, y_place);
     return std::make_pair(x_place, y_place);
 }
+
+
+
