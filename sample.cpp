@@ -363,32 +363,35 @@ int min_max(int deep, int color, int ALPHA, int BETA,int _range[4],int _score[2]
             int breakflag = false;
             for (int j = _range[2];j <= _range[3];++j)
             {
-                memcpy(range, _range, 4 * sizeof(int));
-                memcpy(score, _score, 2 * sizeof(int));
-                board[i][j] = color;
-                range_update(range, i, j);
-
-                if (deep == 0) minmax = score_update(i, j, color, score);
-                else 
+                if (search_place(board, i, j))
                 {
-                    score_update(i, j, color, score);
-                    minmax = min_max(deep - 1, ~color, t.alpha, t.beta, range, score);
-                }
+                    memcpy(range, _range, 4 * sizeof(int));
+                    memcpy(score, _score, 2 * sizeof(int));
+                    board[i][j] = color;
+                    range_update(range, i, j);
 
-                board[i][j] = -1;
-                if (t.alpha < minmax)
-                {
-                    t.alpha = minmax;
-                    if (deep == DEPTH)
+                    if (deep == 0) minmax = score_update(i, j, color, score);
+                    else
                     {
-                        x_place = i;
-                        y_place = j;
+                        score_update(i, j, color, score);
+                        minmax = min_max(deep - 1, ~color, t.alpha, t.beta, range, score);
                     }
-                }
-                if (t.beta <= t.alpha)
-                {
-                    breakflag = true;
-                    break;
+
+                    board[i][j] = -1;
+                    if (t.alpha < minmax)
+                    {
+                        t.alpha = minmax;
+                        if (deep == DEPTH)
+                        {
+                            x_place = i;
+                            y_place = j;
+                        }
+                    }
+                    if (t.beta <= t.alpha)
+                    {
+                        breakflag = true;
+                        break;
+                    }
                 }
             }
             if (breakflag) break;
@@ -403,22 +406,25 @@ int min_max(int deep, int color, int ALPHA, int BETA,int _range[4],int _score[2]
             int breakflag = false;
             for (int j = _range[2];j <= _range[3];++j)
             {
-                memcpy(range, _range, 4 * sizeof(int));
-                memcpy(score, _score, 2 * sizeof(int));
-                board[i][j] = color;
-                range_update(range, i, j);
-
-                score_update(i, j, color, score);
-                minmax = min_max(deep - 1, ~color, t.alpha, t.beta, range, score);
-
-                board[i][j] = -1;
-
-                if (t.beta > minmax) t.beta = minmax;
-                if (t.beta <= t.alpha)
+                if (search_place(board, i, j))
                 {
-                    breakflag = true;
-                    break;
-                }
+                    memcpy(range, _range, 4 * sizeof(int));
+                    memcpy(score, _score, 2 * sizeof(int));
+                    board[i][j] = color;
+                    range_update(range, i, j);
+
+                    score_update(i, j, color, score);
+                    minmax = min_max(deep - 1, ~color, t.alpha, t.beta, range, score);
+
+                    board[i][j] = -1;
+
+                    if (t.beta > minmax) t.beta = minmax;
+                    if (t.beta <= t.alpha)
+                    {
+                        breakflag = true;
+                        break;
+                    }
+                }           
             }
             if (breakflag) break;
         }
