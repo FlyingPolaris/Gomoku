@@ -11,7 +11,7 @@ std::string ai_name = "polaris'_ai";
 
 int turn = 0;
 int board[15][15];
-int positionweight[15][15]  = 
+int positionweight[15][15] =
 {
 { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 },
 { 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1 },
@@ -290,8 +290,8 @@ int score_update(int x, int y, int color, int* score)
         num = num1 + num2 + 1;
         weight /= num;
 
-        if (outofboard(x - det_x * (1 + num1), y - det_y * (1 + num1)) || board[x - det_x * (1 + num1)][y - det_y * (1 + num1)] != color) left_blocked = true;
-        if (outofboard(x + det_x * (1 + num2), y + det_y * (1 + num2)) || board[x + det_x * (1 + num2)][y + det_y * (1 + num2)] != color) right_blocked = true;
+        if (outofboard(x - det_x * (1 + num1), y - det_y * (1 + num1)) || board[x - det_x * (1 + num1)][y - det_y * (1 + num1)] != -1) left_blocked = true;
+        if (outofboard(x + det_x * (1 + num2), y + det_y * (1 + num2)) || board[x + det_x * (1 + num2)][y + det_y * (1 + num2)] != -1) right_blocked = true;
 
         score[color] -= pow(10, num1 - left_blocked) * weight1;
         score[color] -= pow(10, num2 - right_blocked) * weight2;
@@ -310,7 +310,7 @@ int score_update(int x, int y, int color, int* score)
             }
             if(num1) weight1 /= num1;
 
-            if (outofboard(x - det_x * (1 + num1), y - det_y * (1 + num1)) || board[x - det_x * (1 + num1)][y - det_y * (1 + num1)] != ~color) left_blocked = true;
+            if (outofboard(x - det_x * (1 + num1), y - det_y * (1 + num1)) || board[x - det_x * (1 + num1)][y - det_y * (1 + num1)] != -1) left_blocked = true;
             else left_blocked = false;
 
             score[~color] -= pow(10, num1 - left_blocked) * weight1;
@@ -327,7 +327,7 @@ int score_update(int x, int y, int color, int* score)
             }
             if(num2) weight2 /= num2;
 
-            if (outofboard(x + det_x * (1 + num2), y + det_y * (1 + num2)) || board[x + det_x * (1 + num2)][y + det_y * (1 + num2)] != color) right_blocked = true;
+            if (outofboard(x + det_x * (1 + num2), y + det_y * (1 + num2)) || board[x + det_x * (1 + num2)][y + det_y * (1 + num2)] != -1) right_blocked = true;
             else right_blocked = false;
 
             score[~color] -= pow(10, num2 - right_blocked) * weight2;
@@ -430,6 +430,7 @@ int min_max(int deep, int color, int ALPHA, int BETA, int _range[4], int _score[
         }
         return -t.beta;
     }
+    return -minmax;
 }
 
 //init function is called once at the beginning
@@ -460,7 +461,7 @@ void init()
 
 bool swap_or_not()
 {
-    if (score[~ai_side] <= 50) return false;
+    if (score[~ai_side] <= 80) return false;
     else return true;
 }
 
