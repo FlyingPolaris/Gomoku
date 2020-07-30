@@ -1,6 +1,3 @@
-#pragma GCC optimize(2)
-#pragma GCC optimize(2)
-
 #include "AIController.h"
 #include <utility>
 #include <cmath>
@@ -16,18 +13,6 @@ std::string ai_name = "polaris'_ai";
 bool PRINT = 0;
 int turn = 0;
 int board[15][15];
-struct point
-{
-    int x;
-    int y;
-};
-struct tree
-{
-    ll alpha;
-    ll beta;
-};
-
-std::vector<point> best_points;
 
 void print_board()
 {
@@ -76,24 +61,24 @@ struct situation
         for (int i = 0;i <= 1;++i)
         {
             score[i] = 0;
-            int t = color == i ? 1 : 2;
+            int t = color == i ? 4 : 5;
             score[i] += live[i][1] * 10 * t;
             score[i] += live[i][2] * 100 * t;
             switch (live[i][3])
             {
             case 0: break;
-            case 1: score[i] = 10000 * t; break;
-            default:  score[i] = 100000 * t; break;
+            case 1: score[i] += 1000 * t; break;
+            default:  score[i] += 10000 * t; break;
             }
-            score[i] += live[i][4] * 100000 * t;
-            score[i] += live[i][5] * 1000000 * t;
+            score[i] += live[i][4] * 200000 * t;
+            score[i] += live[i][5] * 10000000 * t;
             score[i] += sleep[i][2] * 10 * t;
             score[i] += sleep[i][3] * 100 * t;
             switch (sleep[i][4])
             {
             case 0: break;
-            case 1: score[i] += 1000 * t; break;
-            default:  score[i] += 10000 * t; break;
+            case 1: score[i] += 2000 * t; break;
+            default:  score[i] += 200000 * t; break;
             }
         }
     }
@@ -232,10 +217,14 @@ ll score_update(int x, int y, int color, situation& sit)
         }
     }
     sit.score_cal(color);
-    return sit.score[color] - sit.score[1 - color];
+    return sit.score[ai_side] - sit.score[1 - ai_side];
 }
 
-
+struct point
+{
+    int x;
+    int y;
+};
 
 bool find_neibor(int x, int y, int dis)
 {
@@ -258,6 +247,8 @@ void gen(std::vector<point>& points, int deep, int color, int _range[4], situati
     std::vector<point> my_five;
     std::vector<point> enemy_four;
     std::vector<point> my_four;
+    std::vector<point> enemy_doublesleepfour;
+    std::vector<point> my_doublesleepfour;
     std::vector<point> enemy_threefour;
     std::vector<point> my_threefour;
     std::vector<point> enemy_doublethree;
@@ -289,6 +280,12 @@ void gen(std::vector<point>& points, int deep, int color, int _range[4], situati
                         p.y = j;
                         enemy_four.push_back(p);
                     }
+                    else if (_sit.sleep[1 - color][4] >= 2)
+                    {
+                        p.x = i;
+                        p.y = j;
+                        enemy_doublesleepfour.push_back(p);
+                    }
                     else if ( (_sit.live[1 - color][3] && _sit.sleep[1 - color][4]))
                     {
                         p.x = i;
@@ -315,6 +312,12 @@ void gen(std::vector<point>& points, int deep, int color, int _range[4], situati
                         p.x = i;
                         p.y = j;
                         my_four.push_back(p);
+                    }
+                    else if (_sit.sleep[color][4] >= 2)
+                    {
+                        p.x = i;
+                        p.y = j;
+                        my_doublesleepfour.push_back(p);
                     }
                     else if ((_sit.live[color][3] && _sit.sleep[color][4]))
                     {
@@ -359,16 +362,27 @@ void gen(std::vector<point>& points, int deep, int color, int _range[4], situati
         points.insert(points.end(), my_four.begin(), my_four.end());
         return;
     }
-    else if (!my_threefour.empty())
-    {
-        points.insert(points.end(), my_threefour.begin(), my_threefour.end());
-        return;
-    }
     else if (!enemy_four.empty())
     {
         points.insert(points.end(), enemy_four.begin(), enemy_four.end());
         return;
     }
+    else if (!my_doublesleepfour.empty())
+    {
+        points.insert(points.end(), my_doublesleepfour.begin(), my_doublesleepfour.end());
+        return;
+    }
+    else if (!enemy_doublesleepfour.empty())
+    {
+        points.insert(points.end(), enemy_doublesleepfour.begin(), enemy_doublesleepfour.end());
+        return;
+    }
+    else if (!my_threefour.empty())
+    {
+        points.insert(points.end(), my_threefour.begin(), my_threefour.end());
+        return;
+    }
+
     else if (!enemy_threefour.empty())
     {
         points.insert(points.end(), enemy_threefour.begin(), enemy_threefour.end());
@@ -387,72 +401,6 @@ void gen(std::vector<point>& points, int deep, int color, int _range[4], situati
     points.insert(points.end(), points1.begin(), points1.end());
     points.insert(points.end(), points2.begin(), points2.end());
     return;
-}
-
-ll min_max(int deep, int color, int ALPHA, int BETA, int _range[4], situation& _sit)
-{
-    tree t;
-    //t.w = INT_MIN;
-    t.alpha = ALPHA;
-    t.beta = BETA;
-    ll minmax;
-    bool flag = false;
-    int rang[4];
-    memcpy(rang, _range, 4 * sizeof(int));
-    situation sit = _sit;
-    std::vector<point> points;
-
-    gen(points, deep, ai_side, range, sit);
-
-    if (deep % 2 == 0 && deep != 0)
-    {
-        for (int i = 0;i < points.size();++i)
-        {
-            sit = _sit;
-            point p = points[i];
-            board[p.x][p.y] = color;
-            range_update(rang, p.x, p.y);
-            score_update(p.x, p.y, color, sit);
-            minmax = min_max(deep - 1, 1 - color, t.alpha, t.beta, range, sit);
-            board[p.x][p.y] = -1;
-
-            if (t.alpha < minmax)
-            {
-                t.alpha = minmax;
-                if (DEPTH == deep)
-                {
-                    best_points.push_back(p);
-                }
-            }
-
-            if (t.beta <= t.alpha) break;
-        }
-        return t.alpha;
-    }
-
-    if (deep % 2 == 1)
-    {
-        for (int i = 0;i < points.size();++i)
-        {
-            sit = _sit;
-            point p = points[i];
-            board[p.x][p.y] = color;
-            range_update(rang, p.x, p.y);
-            score_update(p.x, p.y, color, sit);
-            minmax = min_max(deep - 1, 1 - color, t.alpha, t.beta, range, sit);
-            board[p.x][p.y] = -1;
-
-            if (t.beta > minmax)
-            {
-                t.beta = minmax;
-            }
-
-            if (t.beta <= t.alpha) break;
-        }
-        return t.beta;
-    }
-
-    return sit.score[ai_side] - sit.score[1 - ai_side];
 }
 
 ll Min(int deep, situation& _sit, ll alpha, ll beta, int _range[4]);
@@ -498,7 +446,7 @@ ll Max(int deep, situation& _sit, ll alpha, ll beta, int _range[4])
         board[p.x][p.y] = ai_side;
         range_update(rang, p.x, p.y);
         score_update(p.x, p.y, ai_side, sit);
-        ll v = Max(deep - 1, sit, alpha, best > beta ? best : beta, rang);
+        ll v = Min(deep - 1, sit, alpha, best > beta ? best : beta, rang);
         board[p.x][p.y] = -1;
         if (v > best) best = v;
         if (alpha < v) break;
@@ -533,43 +481,19 @@ point maxmin(int deep)
         }
         board[p.x][p.y] = -1;
     }
-    srand(time(0));
-    return best_points[rand()%(best_points.size())];
-}
-
-ll solve(int deep, int color, int _range[4], situation& _sit, ll high)
-{
-    int rang[4];
-    ll s;
-    ll ms = -1e18;
-    situation sit = _sit;
-    memcpy(rang, _range, 4 * sizeof(int));
-    std::vector<point> points;
-    gen(points, deep, ai_side, rang, sit);
-
-    for (int i = 0;i < points.size();++i)
+    
+    int t = 0;
+    int r = 0;
+    for (int i = 0;i < best_points.size();++i)
     {
-        point p = points[i];
-        board[p.x][p.y] = color;
-        sit = _sit;
-        range_update(range, p.x, p.y);
-        if (deep > 1)
+        int p = best_points[i].x < best_points[i].y ? best_points[i].x : best_points[i].y;
+        if (p > t)
         {
-            score_update(p.x, p.y, color, sit);
-            s = solve(deep - 1, 1 - color, range, sit, ms);
+            t = p;
+            r = i;
         }
-        else s = score_update(p.x, p.y, color, sit);
-        board[p.x][p.y] = -1;
-
-        if (s > ms)
-        {
-            ms = s;
-            if (deep == DEPTH) { best_points.push_back(p); }
-        }
-        if (-s <= high) break;
     }
-    return -ms;
-
+    return best_points[r];
 }
 
 void init()
@@ -593,11 +517,11 @@ std::pair<int, int> action(std::pair<int, int> loc)
     {
         if (turn == 1)
         {
-            board[7][7] = ai_side;
-            range_update(range, 7, 7);
-            score_update(7, 7, ai_side, situat);
+            board[0][0] = ai_side;
+            range_update(range, 0, 0);
+            score_update(0, 0, ai_side, situat);
             if (PRINT) print_board();
-            return std::make_pair(7, 7);
+            return std::make_pair(0, 0);
         }
         else if (turn == 3)
         {
@@ -607,15 +531,10 @@ std::pair<int, int> action(std::pair<int, int> loc)
             sit_swap();
 
             point p;
-            best_points.clear();
-            solve(DEPTH, ai_side, range, situat, -1e18);
-            p = best_points[rand() % (best_points.size())];
-
+            p = maxmin(DEPTH);
             board[p.x][p.y] = ai_side;
             score_update(p.x, p.y, ai_side, situat);
             range_update(range, p.x, p.y);
-            if (PRINT) print_board();
-
             return std::make_pair(p.x, p.y);
         }
     }
@@ -624,39 +543,39 @@ std::pair<int, int> action(std::pair<int, int> loc)
     score_update(loc.first, loc.second, 1 - ai_side, situat);
     range_update(range, loc.first, loc.second);
 
-    //if (turn == 1)
-    //{
-    //    if (board[7][7] == -1)
-    //    {
-    //        board[7][7] = ai_side;
-    //        range_update(range, 7, 7);
-    //        score_update(7, 7, ai_side, situat);
-    //        if (PRINT) print_board();
+    /*if (turn == 1)
+    {
+        if (board[7][7] == -1)
+        {
+            board[7][7] = ai_side;
+            range_update(range, 7, 7);
+            score_update(7, 7, ai_side, situat);
+            if (PRINT) print_board();
 
-    //        return std::make_pair(7, 7);
-    //    }
-    //    else
-    //    {
-    //        if (rand() % 2)
-    //        {
-    //            board[7][6] = ai_side;
-    //            range_update(range, 7, 6);
-    //            score_update(7, 6, ai_side, situat);
-    //            if (PRINT) print_board();
+            return std::make_pair(7, 7);
+        }
+        else
+        {
+            if (rand() % 2)
+            {
+                board[7][6] = ai_side;
+                range_update(range, 7, 6);
+                score_update(7, 6, ai_side, situat);
+                if (PRINT) print_board();
 
-    //            return std::make_pair(7, 6);
-    //        }
-    //        else
-    //        {
-    //            board[6][6] = ai_side;
-    //            range_update(range, 6, 6);
-    //            score_update(6, 6, ai_side, situat);
-    //            if (PRINT) print_board();
+                return std::make_pair(7, 6);
+            }
+            else
+            {
+                board[6][6] = ai_side;
+                range_update(range, 6, 6);
+                score_update(6, 6, ai_side, situat);
+                if (PRINT) print_board();
 
-    //            return std::make_pair(6, 6);
-    //        }
-    //    }
-    //}
+                return std::make_pair(6, 6);
+            }
+        }
+    }*/
 
     if (turn == 2 && ai_side == 1 && swap_or_not())
     {
@@ -671,10 +590,7 @@ std::pair<int, int> action(std::pair<int, int> loc)
     }
 
     point p;
-    best_points.clear();
-    solve(DEPTH, ai_side, range, situat, -1e18);
-    p = best_points[rand() % (best_points.size())];
-    
+    p = maxmin(DEPTH);
     board[p.x][p.y] = ai_side;
     score_update(p.x, p.y, ai_side, situat);
     range_update(range, p.x, p.y);
@@ -682,7 +598,3 @@ std::pair<int, int> action(std::pair<int, int> loc)
 
     return std::make_pair(p.x, p.y);
 }
-
-
-
-
