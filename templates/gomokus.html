@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>GOMOKU</title>
+    <style type='text/css'>
+        canvas {
+            display: block;
+            margin: 20px auto;
+            cursor: pointer;
+        }
+        .btn-wrap {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+        }
+        .btn-wrap div {
+            margin: 0 10px;
+        }
+        div>span {
+            display: inline-block;
+            padding: 20px 10px;
+            color: whitesmoke;
+            background-color: rgb(241, 138, 42);
+            border-radius: 10px;
+            cursor: pointer;
+        }
+        div.unable span {
+            background: #D6D6D4;
+            color: #adacaa;
+        }
+        #result-wrap {
+            text-align: center;
+            font-size: 50px;
+            font-weight: normal;
+        }
+    </style>
+</head>
+
+<body style="background-color:rgb(247, 206, 154);">
+    <h3 id="result-wrap">Welocme to Play Gomoku!</h3>
+    <canvas id="chess" width="450px" height="450px"></canvas>
+    <div class="btn-wrap">
+        <div id='restart' class="restart">
+            <span>Restart Game</span>
+        </div>
+        <div id='change' class="change unable">
+            <span>Change Color</span>
+        </div>
+
+        <div id='first' class="first">
+            <span>First Hand</span>
+        </div>
+
+        <div id='second' class="second">
+            <span>Second Hand</span>
+        </div>
+    </div>
+    <script src="jquery-3.5.1.js"></script>
+    <script type="text/javascript" charset="utf-8">
+        var over = false;
+        var me = true;
+        var coordinate_string;
+        var resultTxt = document.getElementById('result-wrap');
+        var changealready = false;
+
+        var chessboard = [];
+        for (var i = 0; i < 15; i++) {
+            chessboard[i] = [];
+            for (var j = 0; j < 15; j++) {
+                chessboard[i][j] = 0;
+            }
+        }
+
+        var chess = document.getElementById("chess");
+        var context = chess.getContext('2d');
+        context.strokeStyle = '#000000';
+        var changebtn = document.getElementById("change");
+        var firstbtn = document.getElementById("first");
+        var secondbtn = document.getElementById("second");
+
+        window.onload = function () {
+            drawChessBoard();
+        }
+
+        document.getElementById("restart").onclick = function () {
+            window.location.reload();
+        }
+        var first = false, second = false;
+        document.getElementById("first").onclick = function () {
+            if (firstbtn.className == "first unable") { return; }
+            first = 1;
+            second = 0;
+            var order_string = String(second);
+            firstbtn.className = "first unable";
+            secondbtn.className = "second unable";
+            $.ajax({
+                url: "http://127.0.0.1:5000/start_game",
+                type: "GET",
+                data: { order_string: order_string },
+                // success: function (data) { alert(data) },
+                // error: function () { alert("接收失败") }
+            })
+        }
+
+        document.getElementById("second").onclick = function () {
+            if (secondbtn.className == "second unable") { return; }
+            first = 0;
+            second = 1;
+
+            var order_string = String(second);
+            firstbtn.className = "first unable";
+            secondbtn.className = "second unable";
+            $.ajax({
+                url: "http://127.0.0.1:5000/start_game",
+                type: "GET",
+                data: { order_string: order_string },
+                // success: function (data) { alert(data) },
+                // error: function () { alert("接收失败") }
+            })
+            chessboard[0][0] = 2;
+            oneStep(0, 0, !me);
+        }
+        var flagg = true;
+        chess.onclick = function (e) {
+            if (over) {
+                return;
+            }
+            if (!me) {
+                return;
+            }
+
+            if (first == 0 && second == 0) {
+                return;
+            }
+            resultTxt.innerHTML = 'Come on, You Can Make it！';
+            if (second == 1 && flagg == true) {
+                changebtn.className = changebtn.className.replace(new RegExp("(\\s|^)unable(\\s|$)"), " ");
+            }
+            if (flagg == false) {
+                changebtn.className = "change unable";
+            }
+            if (second == 1) flagg = false;
+            var x = e.offsetX;
+            var y = e.offsetY;
+            var i = Math.floor(x / 30);
+            var j = Math.floor(y / 30);
+            _nowi = i;
+            _nowj = j;
+
+            if (chessboard[i][j] == 0) {
+                oneStep(i, j, me);
+                chessboard[i][j] = 1;
+
+                winningcheck(i, j);
+                if (over) {
+                    resultTxt.innerHTML = 'Congratulations, You Win！';
+                    return;
+                }
+
+                var coordinate_string = String(i) + '#' + String(j);
+                $.ajax({
+                    url: "http://127.0.0.1:5000/coordinate_from_js_to_py",
+                    type: "GET",
+                    data: { coordinate_string: coordinate_string },
+                    // success: function (data) { alert(data) },
+                    // error: function () { alert("接收失败") }
+                })
+
+                if (!over) {
+                    me = !me;
+                    computerAI();
+                }
+            }
+        }
+
+        changebtn.onclick = function () {
+            if (!backAble) { return; }
+            if (changebtn.className == "change unable") { return; }
+            for (var i = 0; i < 15; i++) {
+                for (var j = 0; j < 15; j++) {
+                    if (chessboard[i][j] != 0) {
+                        chessboard[i][j] = (chessboard[i][j] == 1) ? 2 : 1;
+                        minusStep(i, j);
+                        oneStep(i, j, chessboard[i][j] == 1 ? 1 : 0);
+                    }
+                }
+            }
+            changebtn.className = "change unable";
+
+            var coordinate_string = String(-1) + '#' + String(-1);
+            $.ajax({
+                url: "http://127.0.0.1:5000/coordinate_from_js_to_py",
+                type: "GET",
+                data: { coordinate_string: coordinate_string },
+                // success: function (data) { alert(data) },
+                // error: function () { alert("接收失败") }
+            })
+
+            if (!over) {
+                me = !me;
+                computerAI();
+            }
+        }
+
+        var computerAI = function () {
+            var u, v;
+            $.getJSON("http://127.0.0.1:5000/coordinate_from_py_to_js", function (data) {
+                var coordinate = data.coordinate_string.split('#');
+                u = Number(coordinate[0]);
+                v = Number(coordinate[1]);
+                oneStep(u, v, false);
+                chessboard[u][v] = 2;
+
+                winningcheck(u, v);
+                if (over) {
+                    resultTxt.innerHTML = 'Unluckily, You lose!';
+                    return;
+                }
+                if (!over) {
+                    me = !me;
+                }
+            })
+
+
+        }
+
+        var drawChessBoard = function () {
+            for (var i = 0; i < 15; i++) {
+                context.moveTo(15 + i * 30, 15);
+                context.lineTo(15 + i * 30, 435);
+                context.stroke();
+                context.moveTo(15, 15 + i * 30);
+                context.lineTo(435, 15 + i * 30);
+                context.stroke();
+            }
+        }
+
+        var oneStep = function (i, j, me) {
+            context.beginPath();
+            context.arc(15 + i * 30, 15 + j * 30, 13, 0, 2 * Math.PI);
+            context.closePath();
+
+            var gradient = context.createRadialGradient(75, 50, 5, 90, 60, 100);
+
+            if (me && first == 1 || !me && second == 1) {
+                gradient.addColorStop(0, '#000000');
+                gradient.addColorStop(1, '#0a0a0a');
+            }
+            else {
+                gradient.addColorStop(0, '#f9f9f9');
+                gradient.addColorStop(1, '#ffffff');
+            }
+            context.fillStyle = gradient;
+            context.fill();
+        }
+        var minusStep = function (i, j) {
+            context.clearRect((i) * 30, (j) * 30, 30, 30);
+            context.beginPath();
+            context.moveTo(15 + i * 30, j * 30);
+            context.lineTo(15 + i * 30, j * 30 + 30);
+            context.moveTo(i * 30, j * 30 + 15);
+            context.lineTo((i + 1) * 30, j * 30 + 15);
+            context.stroke();
+        }
+
+        var winningcheck = function (xplace, yplace) {
+            var color;
+            if (me && !changealready || !me && changealready) color = 1;
+            else color = 2;
+
+            var a = xplace, b = yplace, num = 0;
+            a = xplace - 1;
+            while (a >= 0) {
+                if (chessboard[a][b] == color) {
+                    num++;
+                    a--;
+                }
+                else break;
+            }
+            a = xplace + 1;
+            while (a <= 14) {
+                if (chessboard[a][b] == color) {
+                    num++;
+                    a++;
+                }
+                else break;
+            }
+            if (num >= 4) {
+                over = true;
+            }
+
+            a = xplace;
+            b = yplace - 1;
+            num = 0;
+            while (b >= 0) {
+                if (chessboard[a][b] == color) {
+                    num++;
+                    b--;
+                }
+                else break;
+            }
+            b = yplace + 1;
+            while (a <= 14) {
+                if (chessboard[a][b] == color) {
+                    num++;
+                    b++;
+                }
+                else break;
+            }
+            if (num >= 4) {
+                over = true;
+            }
+
+            a = xplace - 1;
+            b = yplace + 1;
+            num = 0;
+            while (b <= 14 && a >= 0) {
+                if (chessboard[a][b] == color) {
+                    num++;
+                    a--;
+                    b++;
+                }
+                else break;
+            }
+            a = xplace + 1;
+            b = yplace - 1;
+            while (a <= 14 && b >= 0) {
+                if (chessboard[a][b] == color) {
+                    num++;
+                    a++;
+                    b--;
+                }
+                else break;
+            }
+            if (num >= 4) {
+                over = true;
+            }
+
+            a = xplace - 1;
+            b = yplace - 1;
+            num = 0;
+            while (b >= 0 && a >= 0) {
+                if (chessboard[a][b] == color) {
+                    num++;
+                    a--;
+                    b--;
+                }
+                else break;
+            }
+            a = xplace + 1;
+            b = yplace + 1;
+            while (a <= 14 && b <= 14) {
+                if (chessboard[a][b] == color) {
+                    num++;
+                    a++;
+                    b++;
+                }
+                else break;
+            }
+            if (num >= 4) {
+                over = true;
+            }
+        }
+    </script>
+</body>
+
+</html>
